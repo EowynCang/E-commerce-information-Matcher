@@ -24,18 +24,24 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class getMatch {
 	private static final String EXCEL_XLS = "xls";
 	private static final String EXCEL_XLSX = "xlsx";
+	private static final String BRS="转出BRS"; 
+	private static final String DISTRIBUTOR = "推荐分销商";
+	private static final String UNSETTLED = "Eshop产品未成交";
 
 	public static void main(String[] args) throws FileNotFoundException {
 		try {
 			String encoding = "UTF-8";
 			File file = new File("E.txt");
+			
 			List<String> id = new ArrayList<>();
 			List<String> information = new ArrayList<>();
 			List<String> date_info = new ArrayList<>();
+			List<String> phone = new ArrayList<>();
+			List<String> status = new ArrayList<>();
 			
 
 			// The account responsible for the purchase
-			String localHost;
+			String localHost = null;
 
 			if (file.isFile() && file.exists()) {
 				InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);
@@ -43,6 +49,10 @@ public class getMatch {
 				String lineTxt = null;
 				String all = "";
 				localHost = bufferedReader.readLine();
+				localHost=filterHost(localHost);
+
+				//System.out.println(localHost);
+				//System.out.println("localHost 长度："+localHost.length());
 
 				while ((lineTxt = bufferedReader.readLine()) != null) {
 					all = all + "\n" + lineTxt;
@@ -54,46 +64,20 @@ public class getMatch {
 
 				for (String s : splited) {
 					if (i % 2 != 0) {
-						// System.out.println(s);
 						id.add(s);
+						
 					} else {
-
-						String subs[] = s.split("\n");
-						String compSet = "";
 						
+						String sub[] = s.split("\n");
 						
-						Pattern p2 = Pattern.compile("20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]");
-						Matcher date = p2.matcher(s);
-						boolean date_r = date.find();
-						String date_result = null;
+						matchDate(s,date_info);
+
+						matchInfo(sub,information,localHost);
 						
-						if(date_r){
-							date_result = date.group(0);
-							date_info.add(date_result);
-						}
+						matchPhone(sub,phone,localHost);
+						
+						matchStatus(sub,status);
 
-						for (String ss : subs) {
-							Pattern p1 = Pattern.compile(".*公司.*");
-							Matcher comp = p1.matcher(ss);
-							boolean result2 = comp.find();
-							String company_result = null;
-							
-							
-							if (result2) {
-								company_result = comp.group(0);
-								// strs.add(company_result);
-							}
-							if (company_result != null) {
-								compSet = compSet + company_result;
-							}
-						}
-						if (compSet.contains("抱歉哦亲， 您询价的产品还没有在这边销售")) {
-							compSet = compSet.replaceAll(
-									"抱歉哦亲， 您询价的产品还没有在这边销售， 所以我无法给您报价，您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下您的公司名称和联系电话", "");						
-						}
-						compSet = compSet.replaceAll("您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下您的公司名称和联系电话", "");
-
-						information.add(compSet);
 					}
 					i++;
 				}
@@ -102,21 +86,46 @@ public class getMatch {
 			}
 
 			information.remove(0);
-			writeFile(id, information,date_info, 1, "writeExcel.xlsx");
+			phone.remove(0);
+			status.remove(0);
+			writeFile(id, information,date_info,phone,status, 1, "writeExcel.xlsx");
 
+			
+			try{
 			System.out.println(id);
 			System.out.println(id.size());
 			System.out.println(information);
 			System.out.println(information.size());
 			System.out.println(date_info);
 			System.out.println(date_info.size());
+			System.out.println(phone);
+			System.out.println(phone.size());
+			System.out.println(localHost);
+			}catch(Exception e){
+				System.out.println("Error!");
+				e.printStackTrace();
+			}
+			
+			
 		} catch (Exception e) {
 			System.out.println("Warning ! Reading file error!");
 			e.printStackTrace();
 		}
 	}
 
-	private static void writeFile(List<String> idList, List<String> infoList,List<String> date_info, int cloumnCount, String finalXlsxPath) {
+	
+	private static String filterHost(String localHost){
+		Pattern p1 = Pattern.compile("[a-zA-Z0-9].*");
+		Matcher m = p1.matcher(localHost);
+		boolean result = m.find();
+		
+		if(result){
+			localHost = m.group(0);
+		}
+		return localHost;
+	}
+
+	private static void writeFile(List<String> idList, List<String> infoList,List<String> date_info, List<String> phone, List<String> status,int cloumnCount, String finalXlsxPath) {
 
 		OutputStream out = null;
 		try {
@@ -158,6 +167,12 @@ public class getMatch {
 				String d = date_info.get(j);
 				String dateInfo = d.toString();
 				
+				String p = phone.get(j);
+				String phoneInfo = p.toString();
+				
+				String sta = status.get(j);
+				String statusInfo = sta.toString();
+				
 				for (int k = 0; k <= columnNumCount; k++) {
 					
 					// Loop in one row
@@ -170,12 +185,17 @@ public class getMatch {
 					Cell third =row.createCell(2);
 					third.setCellValue(idInfo);
 					
+					Cell fifth = row.createCell(4);
+					fifth.setCellValue(statusInfo);
+					
 					Cell seventh =row.createCell(6);
 					seventh.setCellValue(dateInfo);
 					
 					Cell eighth =row.createCell(8);
 					eighth.setCellValue(info);
 					
+					Cell ninth =row.createCell(9);
+					ninth.setCellValue(phoneInfo);
 
 				}
 			}
@@ -209,4 +229,93 @@ public class getMatch {
 		}
 		return wb;
 	}
+	
+	private static void  matchDate(String s,List<String> date_info){
+		Pattern p2 = Pattern.compile("20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]");
+		Matcher date = p2.matcher(s);
+		boolean date_r = date.find();
+		String date_result = null;
+		
+		if(date_r){
+			date_result = date.group(0);
+			date_info.add(date_result);
+		}
+	}
+	
+	private static void matchInfo(String subs[],List<String> information,String localHost){
+
+		//String subs[] = s.split("\n");
+		String compSet = "";
+		
+		for (String ss : subs) {
+			if(!ss.contains(localHost)){
+			
+			Pattern p1 = Pattern.compile(".{11}公司.*");
+			Matcher comp = p1.matcher(ss);
+			boolean result2 = comp.find();
+			String company_result = null;
+			
+			
+			if (result2) {
+				company_result = comp.group(0);
+				// strs.add(company_result);
+			}
+			if (company_result != null) {
+				compSet = compSet + company_result;
+			}
+			}else{
+				continue;
+			}
+		}
+//		if (compSet.contains("抱歉哦亲， 您询价的产品还没有在这边销售")) {
+//			compSet = compSet.replaceAll(
+//					"抱歉哦亲， 您询价的产品还没有在这边销售， 所以我无法给您报价，您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下您的公司名称和联系电话", "");						
+//		}
+		compSet = compSet.replaceAll("您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下贵司名称和联系电话", "");
+
+		information.add(compSet);
+				
+	}
+	
+	private static void matchPhone(String subs[],List<String> phone,String localHost){
+		//String subs[] = s.split("\n");
+		String phoneSet = "";
+		
+		for(String ss:subs){
+			if(!ss.contains(localHost)){
+			Pattern p = Pattern.compile(".{4}1[0-9]{10}");
+			Matcher m = p.matcher(ss);
+			boolean result = m.find();
+			String phone_result=null;
+			
+			if(result){
+				phone_result = m.group(0);
+				//System.out.println(m.group(0));
+			}
+			if(phone_result!=null){
+				phoneSet = phoneSet+phone_result+"\n";
+			}			
+		}
+		}
+		phone.add(phoneSet);
+		
+	}
+	
+	private static void matchStatus(String subs[],List<String> status){
+		String statusSet = "";
+		
+		for(String ss:subs){
+			//String status_result=null;
+		if(ss.contains("帮您转出")){
+			statusSet =BRS;
+			System.out.println("wawawawaw");
+		}else if(ss.contains("为您推荐官方授权代理商")){
+			statusSet = DISTRIBUTOR; 
+		}else{
+			statusSet = UNSETTLED;
+		}
+		}
+		status.add(statusSet);
+	}
+	
 }
