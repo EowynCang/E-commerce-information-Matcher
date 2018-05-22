@@ -89,6 +89,7 @@ public class getMatch {
 			phone.remove(0);
 			status.remove(0);
 			writeFile(id, information,date_info,phone,status, 1, "writeExcel.xlsx");
+			
 
 			
 			try{
@@ -105,6 +106,26 @@ public class getMatch {
 				System.out.println("Error!");
 				e.printStackTrace();
 			}
+			
+			
+			
+			dataQuery dq = new dataQuery();
+			File read_file = new File("region.xls");
+			List excelList = dq.readExcel(read_file);
+			
+			for (int i = 0; i < excelList.size(); i++) {
+	            List list = (List) excelList.get(i);
+	            for (int j = 0; j < list.size(); j++) {
+	               // System.out.print(list.get(j));
+	            }
+	           // System.out.println();
+	        }
+			System.out.println(excelList );
+			
+			
+			
+			
+			
 			
 			
 		} catch (Exception e) {
