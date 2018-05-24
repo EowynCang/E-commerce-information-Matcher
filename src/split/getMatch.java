@@ -341,8 +341,10 @@ public class getMatch {
 			if (ss.contains("帮您转出")) {
 				statusSet = BRS;
 				//System.out.println("wawawawaw");
-			}else if (ss.contains("为您推荐官方授权代理商")) {
-				statusSet += DISTRIBUTOR;
+			}else if (ss.contains("为您推荐官方授权代理商")||ss.contains("帮您转给")) {
+				if(!statusSet.contains(DISTRIBUTOR)) {
+					statusSet += DISTRIBUTOR;
+				}
 			}else if(ss.contains("https")){
 				statusSet = UNSETTLED;
 			}
@@ -360,19 +362,45 @@ public class getMatch {
 		String buSet ="";
 		
 		for(String ss:subs){
-			Pattern p1 = Pattern.compile("6[e|E][S|s|5]+[0-9A-Za-z\\-\\s]{0,16}");
-			Matcher m = p1.matcher(ss);
-			boolean result = m.find();
-			String product_result = null;
+			Pattern pFA = Pattern.compile("(6[e|E][S|s|5]+[0-9A-Za-z\\-\\s]{0,16})|(触摸屏)|(面板)|(工控机)|([P|p][L|l][C|c])");
+			Matcher mFA = pFA.matcher(ss);
+			boolean resultFA = mFA.find();			
+			
+			Pattern pCP = Pattern.compile("接触器|断路器|继电器|按钮|指示灯|信号灯|软启|开关|3TF40");
+			Matcher mCP = pCP.matcher(ss);
+			boolean resultCP = mCP.find();
+			
+			Pattern pMC = Pattern.compile("");
+			Matcher mMC = pMC.matcher(ss);
+			boolean resultMC = mMC.find();
+			
+			Pattern pCS = Pattern.compile("");
+			Matcher mCS = pMC.matcher(ss);
+			boolean resultCS = mCS.find();
+			
+			Pattern pLD = Pattern.compile("");
+			Matcher mLD = pLD.matcher(ss);
+			boolean resultLD = mLD.find();
+			
+			String product_result=null;
 			
 
-			if (result) {
-				product_result = m.group(0);
+			if (resultFA) {
+				product_result = mFA.group(0);
 				// strs.add(company_result);
+			}else if(resultCP){
+				product_result = mCP.group(0);
 			}
+			
 			if (product_result != null) {
-				productSet = productSet + product_result+"\n";
-				buSet = "FA";
+				if(!productSet.contains(product_result)){
+					productSet = productSet + product_result+"\n";
+				}
+				if(resultFA){ 
+					buSet = "FA";
+				}else if(resultCP){
+					if(!buSet.contains("CP")) buSet += "CP";
+				}
 			}
 		}
 		product.add(productSet);
