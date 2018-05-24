@@ -79,8 +79,8 @@ public class getMatch {
 						matchPhone(sub, phone, localHost);
 
 						matchStatus(sub, status);
-						
-						matchProductBu(sub,product,bu);
+
+						matchProductBu(sub, product, bu);
 
 					}
 					i++;
@@ -94,7 +94,7 @@ public class getMatch {
 			status.remove(0);
 			product.remove(0);
 			bu.remove(0);
-			writeFile(id, information, date_info, phone, status,bu,product,1, "writeExcel.xlsx");
+			writeFile(id, information, date_info, phone, status, bu, product, 1, "writeExcel.xlsx");
 
 			try {
 				System.out.println(id);
@@ -142,7 +142,8 @@ public class getMatch {
 	}
 
 	private static void writeFile(List<String> idList, List<String> infoList, List<String> date_info,
-			List<String> phone, List<String> status,List<String> bu,List<String> product, int cloumnCount, String finalXlsxPath) {
+			List<String> phone, List<String> status, List<String> bu, List<String> product, int cloumnCount,
+			String finalXlsxPath) {
 
 		OutputStream out = null;
 		try {
@@ -192,11 +193,11 @@ public class getMatch {
 
 				String sta = status.get(j);
 				String statusInfo = sta.toString();
-				
+
 				String pro = product.get(j);
 				String productInfo = pro.toString();
-				
-				String b =bu.get(j);
+
+				String b = bu.get(j);
 				String buInfo = b.toString();
 
 				for (int k = 0; k <= columnNumCount; k++) {
@@ -210,7 +211,7 @@ public class getMatch {
 
 					Cell third = row.createCell(2);
 					third.setCellValue(idInfo);
-					
+
 					Cell forth = row.createCell(3);
 					forth.setCellValue(buInfo);
 
@@ -222,7 +223,7 @@ public class getMatch {
 
 					Cell eighth = row.createCell(7);
 					eighth.setCellValue(productInfo);
-					
+
 					Cell ninth = row.createCell(8);
 					ninth.setCellValue(info);
 
@@ -282,7 +283,7 @@ public class getMatch {
 		for (String ss : subs) {
 			if (!ss.contains(localHost)) {
 
-				Pattern p1 = Pattern.compile(".{13}公司.*");
+				Pattern p1 = Pattern.compile(".{13}[公司|学校|科技].*");
 				Matcher comp = p1.matcher(ss);
 				boolean result2 = comp.find();
 				String company_result = null;
@@ -292,7 +293,9 @@ public class getMatch {
 					// strs.add(company_result);
 				}
 				if (company_result != null) {
-					compSet = compSet + company_result;
+					if(!compSet.contains(company_result)){
+						compSet = compSet + company_result;
+					}
 				}
 			} else {
 				continue;
@@ -325,7 +328,9 @@ public class getMatch {
 					// System.out.println(m.group(0));
 				}
 				if (phone_result != null) {
-					phoneSet = phoneSet + phone_result + "\n";
+					if(!phoneSet.contains(phone_result)){
+						phoneSet = phoneSet + phone_result + "\n";
+					}
 				}
 			}
 		}
@@ -340,73 +345,97 @@ public class getMatch {
 			// String status_result=null;
 			if (ss.contains("帮您转出")) {
 				statusSet = BRS;
-				//System.out.println("wawawawaw");
-			}else if (ss.contains("为您推荐官方授权代理商")||ss.contains("帮您转给")) {
-				if(!statusSet.contains(DISTRIBUTOR)) {
+				// System.out.println("wawawawaw");
+			} else if (ss.contains("为您推荐官方授权代理商")) {
+				if (!statusSet.contains(DISTRIBUTOR)) {
 					statusSet += DISTRIBUTOR;
 				}
-			}else if(ss.contains("https")){
+			} else if (ss.contains("https")) {
 				statusSet = UNSETTLED;
 			}
 		}
 		status.add(statusSet);
 	}
 
-	
-	private static void matchRegion(String s,List<String> region){
-		
-	}
-	
-	private static void matchProductBu(String subs[],List<String> product,List<String> bu){
-		String productSet = "";
-		String buSet ="";
-		
-		for(String ss:subs){
-			Pattern pFA = Pattern.compile("(6[e|E][S|s|5]+[0-9A-Za-z\\-\\s]{0,16})|(触摸屏)|(面板)|(工控机)|([P|p][L|l][C|c])");
-			Matcher mFA = pFA.matcher(ss);
-			boolean resultFA = mFA.find();			
-			
-			Pattern pCP = Pattern.compile("接触器|断路器|继电器|按钮|指示灯|信号灯|软启|开关|3TF40");
-			Matcher mCP = pCP.matcher(ss);
-			boolean resultCP = mCP.find();
-			
-			Pattern pMC = Pattern.compile("");
-			Matcher mMC = pMC.matcher(ss);
-			boolean resultMC = mMC.find();
-			
-			Pattern pCS = Pattern.compile("");
-			Matcher mCS = pMC.matcher(ss);
-			boolean resultCS = mCS.find();
-			
-			Pattern pLD = Pattern.compile("");
-			Matcher mLD = pLD.matcher(ss);
-			boolean resultLD = mLD.find();
-			
-			String product_result=null;
-			
+	private static void matchRegion(String s, List<String> region) {
 
-			if (resultFA) {
-				product_result = mFA.group(0);
-				// strs.add(company_result);
-			}else if(resultCP){
-				product_result = mCP.group(0);
-			}
-			
-			if (product_result != null) {
-				if(!productSet.contains(product_result)){
-					productSet = productSet + product_result+"\n";
+	}
+
+	private static void matchProductBu(String subs[], List<String> product, List<String> bu) {
+		String productSet = "";
+		String buSet = "";
+
+		for (String ss : subs) {
+			if (!ss.contains("http")) {
+				Pattern pFA = Pattern
+						.compile("(6[e|E|A|a][S|s|5|v|V]+[0-9A-Za-z\\-\\s]{0,16})|(触摸屏)|(面板)|(工控机)|([P|p][L|l][C|c])|[lL][o|O][g|G][o|O]|[c|C][p|P][u|U]");
+				Matcher mFA = pFA.matcher(ss);
+				boolean resultFA = mFA.find();
+
+				Pattern pCP = Pattern.compile(
+						"接触器|断路器|继电器|按钮|指示灯|信号灯|软启|开关|3[R|r|t|T|v|V|u|U][t|v|u|h|b|a|s|d|f|w|g|x|c|k|T|V|U|H|B|A|S|D|F|W|G|X|C|K]+[0-9A-Za-z\\-\\s]{0,16}|8[A-Za-z][A-Za-z]+[0-9A-Za-z\\-\\s]{0,16}");
+				Matcher mCP = pCP.matcher(ss);
+				boolean resultCP = mCP.find();
+
+				Pattern pMC = Pattern.compile(
+						"6[F|f|s|S][c|C|x|X|l|L|E|e|K|k]+[0-9A-Za-z\\-\\s]{0,16}|[S|s]120|[V|v][2|9][0|o|O]|[M|m][M|m]4|1[a-zA-Z][a-zA-Z]+[0-9A-Za-z\\-\\s]{0,16}|[g|G]1[1|2]0[a-zA-Z]{0,2}|变频器|电机|数控");
+				Matcher mMC = pMC.matcher(ss);
+				boolean resultMC = mMC.find();
+
+				Pattern pCS = Pattern.compile("lalal");
+				Matcher mCS = pCS.matcher(ss);
+				boolean resultCS = mCS.find();
+
+				Pattern pLD = Pattern.compile("llal");
+				Matcher mLD = pLD.matcher(ss);
+				boolean resultLD = mLD.find();
+
+				Pattern pPIC = Pattern.compile("图片");
+				Matcher mPIC = pPIC.matcher(ss);
+				boolean resultPIC = mPIC.find();
+
+				String product_result = null;
+
+				if (resultFA) {
+					product_result = mFA.group(0);
+					// strs.add(company_result);
+				} else if (resultCP) {
+					product_result = mCP.group(0);
+				} else if (resultMC) {
+					product_result = mMC.group(0);
+				} else if (resultCS) {
+					product_result = mCS.group(0);
+				} else if (resultLD) {
+					product_result = mLD.group(0);
+				} else if (resultPIC) {
+					product_result = mPIC.group(0);
 				}
-				if(resultFA){ 
-					buSet = "FA";
-				}else if(resultCP){
-					if(!buSet.contains("CP")) buSet += "CP";
+
+				if (product_result != null) {
+					if (!productSet.contains(product_result)) {
+						productSet = productSet + product_result + "\n";
+					}
+					if (resultFA) {
+						buSet = "FA";
+					} else if (resultCP) {
+						if (!buSet.contains("CP"))
+							buSet += "CP";
+					} else if (resultMC) {
+						if (!buSet.contains("MC"))
+							buSet += "MC";
+					} else if (resultCS) {
+						if (!buSet.contains("CS"))
+							buSet += "CS";
+					} else if (resultLD) {
+						if (!buSet.contains("LD"))
+							buSet += "LD";
+					}
 				}
 			}
 		}
 		product.add(productSet);
 		bu.add(buSet);
-		
-		
+
 		System.out.println(productSet);
 	}
 }
