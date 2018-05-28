@@ -27,11 +27,19 @@ public class getMatch {
 	private static final String BRS = "转出BRS";
 	private static final String DISTRIBUTOR = "推荐分销商";
 	private static final String UNSETTLED = "Eshop产品未成交";
+	private static final String RECORD_FILE_NAME = "eshopali123123.txt";
+	private static final String REGION_FILE_NAME = "region.xls";
+	private static final String CHANNEL = "Alibaba";
+	private static final String BU_FA = "FA";
+	private static final String BU_PA = "PA";
+	private static final String BU_MC = "MC";
+	private static final String BU_CS = "CS";
+	private static final String BU_CP = "CP";
 
 	public static void main(String[] args) throws FileNotFoundException {
 		try {
 			String encoding = "UTF-8";
-			File file = new File("eshopali.txt");
+			File file = new File(RECORD_FILE_NAME);
 
 			List<String> id = new ArrayList<>();
 			List<String> information = new ArrayList<>();
@@ -41,6 +49,7 @@ public class getMatch {
 			List<String> region = new ArrayList<>();
 			List<String> bu = new ArrayList<>();
 			List<String> product = new ArrayList<>();
+			List<String> dataOut = new ArrayList<>();
 
 			// The account responsible for the purchase
 			String localHost = null;
@@ -78,7 +87,7 @@ public class getMatch {
 
 						matchPhone(sub, phone, localHost);
 
-						matchStatus(sub, status);
+						matchStatus(sub, status,dataOut);
 
 						matchProductBu(sub, product, bu);
 
@@ -94,7 +103,8 @@ public class getMatch {
 			status.remove(0);
 			product.remove(0);
 			bu.remove(0);
-			writeFile(id, information, date_info, phone, status, bu, product, 1, "writeExcel.xlsx");
+			dataOut.remove(0);
+			writeFile(id, information, date_info, phone, status,dataOut, bu, product, 1, "writeExcel.xlsx");
 
 			try {
 				System.out.println(id);
@@ -106,13 +116,15 @@ public class getMatch {
 				System.out.println(phone);
 				System.out.println(phone.size());
 				System.out.println(localHost);
+				System.out.println(dataOut);
+				System.out.println(dataOut.size());
 			} catch (Exception e) {
 				System.out.println("Error!");
 				e.printStackTrace();
 			}
 
 			dataQuery dq = new dataQuery();
-			File read_file = new File("region.xls");
+			File read_file = new File(REGION_FILE_NAME);
 			List excelList = dq.readExcel(read_file);
 
 			for (int i = 0; i < excelList.size(); i++) {
@@ -142,7 +154,7 @@ public class getMatch {
 	}
 
 	private static void writeFile(List<String> idList, List<String> infoList, List<String> date_info,
-			List<String> phone, List<String> status, List<String> bu, List<String> product, int cloumnCount,
+			List<String> phone, List<String> status,List<String> dataOut, List<String> bu, List<String> product, int cloumnCount,
 			String finalXlsxPath) {
 
 		OutputStream out = null;
@@ -199,6 +211,9 @@ public class getMatch {
 
 				String b = bu.get(j);
 				String buInfo = b.toString();
+				
+				String o = dataOut.get(j);
+				String dataOutInfo = o.toString();
 
 				for (int k = 0; k <= columnNumCount; k++) {
 
@@ -207,7 +222,7 @@ public class getMatch {
 					first.setCellValue(j + 1);
 
 					Cell second = row.createCell(1);
-					second.setCellValue("Alibaba");
+					second.setCellValue(CHANNEL);
 
 					Cell third = row.createCell(2);
 					third.setCellValue(idInfo);
@@ -217,6 +232,9 @@ public class getMatch {
 
 					Cell fifth = row.createCell(4);
 					fifth.setCellValue(statusInfo);
+					
+					Cell sixth = row.createCell(5);
+					sixth.setCellValue(dataOutInfo);
 
 					Cell seventh = row.createCell(6);
 					seventh.setCellValue(dateInfo);
@@ -282,8 +300,9 @@ public class getMatch {
 
 		for (String ss : subs) {
 			if (!ss.contains(localHost)) {
+				if(!ss.contains("西门子公司")){
 
-				Pattern p1 = Pattern.compile(".{13}[公司|学校|科技].*");
+				Pattern p1 = Pattern.compile("\\):.+[公司|学校|科技].*");
 				Matcher comp = p1.matcher(ss);
 				boolean result2 = comp.find();
 				String company_result = null;
@@ -297,16 +316,13 @@ public class getMatch {
 						compSet = compSet + company_result;
 					}
 				}
+			}
 			} else {
 				continue;
 			}
 		}
-		// if (compSet.contains("抱歉哦亲， 您询价的产品还没有在这边销售")) {
-		// compSet = compSet.replaceAll(
-		// "抱歉哦亲， 您询价的产品还没有在这边销售，
-		// 所以我无法给您报价，您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下您的公司名称和联系电话", "");
-		// }
-		compSet = compSet.replaceAll("您需要采购的话可以帮您转给西门子线下渠道报价，需要提供下贵司名称和联系电话", "");
+		
+		compSet = compSet.replaceAll("\\):  ", "");
 
 		information.add(compSet);
 
@@ -338,9 +354,10 @@ public class getMatch {
 
 	}
 
-	private static void matchStatus(String subs[], List<String> status) {
+	private static void matchStatus(String subs[], List<String> status,List<String> dataOut) {
 		String statusSet = "";
-
+		String distributorSet = "";
+		
 		for (String ss : subs) {
 			// String status_result=null;
 			if (ss.contains("帮您转出")) {
@@ -350,11 +367,30 @@ public class getMatch {
 				if (!statusSet.contains(DISTRIBUTOR)) {
 					statusSet += DISTRIBUTOR;
 				}
+				
+				Pattern p = Pattern
+						.compile("为您推荐官方授权代理商.+(联系下这个人)?");
+				Matcher m = p.matcher(ss);
+				boolean result = m.find();
+				String distributor_result = null;
+				
+				if (result) {
+					distributor_result = m.group(0);
+				}
+				if (distributor_result != null) {
+					if (!distributorSet.contains(distributor_result)) {
+						distributorSet = distributorSet + distributor_result + "\n";
+					}
+				}
+				
 			} else if (ss.contains("https")) {
 				statusSet = UNSETTLED;
 			}
 		}
+		distributorSet = distributorSet.replaceAll("为您推荐官方授权代理商：","");
+		distributorSet = distributorSet.replaceAll("联系下这个人","");
 		status.add(statusSet);
+		dataOut.add(distributorSet);
 	}
 
 	private static void matchRegion(String s, List<String> region) {
@@ -368,27 +404,23 @@ public class getMatch {
 		for (String ss : subs) {
 			if (!ss.contains("http")) {
 				Pattern pFA = Pattern
-						.compile("(6[e|E|A|a][S|s|5|v|V]+[0-9A-Za-z\\-\\s]{0,16})|(触摸屏)|(面板)|(工控机)|([P|p][L|l][C|c])|[lL][o|O][g|G][o|O]|[c|C][p|P][u|U]");
+						.compile("6[e|E|A|a][S|s|5|v|V]+[0-9A-Za-z\\-\\s\\()]{0,16}|(触摸屏)|(面板)|(工控机)|[lL][o|O][g|G][o|O]|[c|C][p|P][u|U]");
 				Matcher mFA = pFA.matcher(ss);
 				boolean resultFA = mFA.find();
 
 				Pattern pCP = Pattern.compile(
-						"接触器|断路器|继电器|按钮|指示灯|信号灯|软启|开关|3[R|r|t|T|v|V|u|U][t|v|u|h|b|a|s|d|f|w|g|x|c|k|T|V|U|H|B|A|S|D|F|W|G|X|C|K]+[0-9A-Za-z\\-\\s]{0,16}|8[A-Za-z][A-Za-z]+[0-9A-Za-z\\-\\s]{0,16}");
+						"接触器|断路器|继电器|按钮|指示灯|信号灯|软启|3[R|r|t|T|v|V|u|U][t|v|u|h|b|a|s|d|f|w|g|x|c|k|T|V|U|H|B|A|S|D|F|W|G|X|C|K]+[0-9A-Za-z\\-\\s]{0,16}|8[A-Za-z][A-Za-z]+[0-9A-Za-z\\-\\s]{0,16}");
 				Matcher mCP = pCP.matcher(ss);
 				boolean resultCP = mCP.find();
 
 				Pattern pMC = Pattern.compile(
-						"6[F|f|s|S][c|C|x|X|l|L|E|e|K|k]+[0-9A-Za-z\\-\\s]{0,16}|[S|s]120|[V|v][2|9][0|o|O]|[M|m][M|m]4|1[a-zA-Z][a-zA-Z]+[0-9A-Za-z\\-\\s]{0,16}|[g|G]1[1|2]0[a-zA-Z]{0,2}|变频器|电机|数控");
+						"6[F|f|s|S][c|C|x|X|l|L|E|e|K|k]+[0-9A-Za-z\\-\\s]{0,16}|[S|s]120|[V|v][2|9][0|o|O]|[M|m][M|m]4|1[f|g|h|l|k|p|u|F|G|H|L|K|P|U][F|G|K|L|N|S|T|W|D|V|U|M|A|f|g|k|l|n|s|t|w|d|v|u|m|a][0-9A-Za-z\\-\\s]{0,16}|[g|G]1[1|2]0[a-zA-Z]{0,2}|变频器|数控");
 				Matcher mMC = pMC.matcher(ss);
 				boolean resultMC = mMC.find();
 
-				Pattern pCS = Pattern.compile("lalal");
+				Pattern pCS = Pattern.compile("9[h|H][s|S]+[0-9A-Za-z\\-\\s]{2,16}|9[a|A][t|T]+[0-9A-Za-z\\-\\s]{2,16}|9[f|F][c|C]+[0-9A-Za-z\\-\\s]{2,16}|9[V|v][S|s|p|P]+[0-9A-Za-z\\-\\s]{2,16}");
 				Matcher mCS = pCS.matcher(ss);
 				boolean resultCS = mCS.find();
-
-				Pattern pLD = Pattern.compile("llal");
-				Matcher mLD = pLD.matcher(ss);
-				boolean resultLD = mLD.find();
 
 				Pattern pPIC = Pattern.compile("图片");
 				Matcher mPIC = pPIC.matcher(ss);
@@ -396,19 +428,22 @@ public class getMatch {
 
 				String product_result = null;
 
-				if (resultFA) {
-					product_result = mFA.group(0);
-					// strs.add(company_result);
-				} else if (resultCP) {
+//				if (resultFA) {
+//					product_result = mFA.group(0);
+//					// strs.add(company_result);
+//					
+//				} 
+				if (resultCP) {
 					product_result = mCP.group(0);
 				} else if (resultMC) {
 					product_result = mMC.group(0);
 				} else if (resultCS) {
 					product_result = mCS.group(0);
-				} else if (resultLD) {
-					product_result = mLD.group(0);
 				} else if (resultPIC) {
 					product_result = mPIC.group(0);
+				}else if (resultFA) {
+					product_result = mFA.group(0);
+					// strs.add(company_result);
 				}
 
 				if (product_result != null) {
@@ -416,19 +451,17 @@ public class getMatch {
 						productSet = productSet + product_result + "\n";
 					}
 					if (resultFA) {
-						buSet = "FA";
+						if (!buSet.contains(BU_FA))
+							buSet += BU_FA;
 					} else if (resultCP) {
-						if (!buSet.contains("CP"))
-							buSet += "CP";
+						if (!buSet.contains(BU_CP))
+							buSet += BU_CP;
 					} else if (resultMC) {
-						if (!buSet.contains("MC"))
-							buSet += "MC";
+						if (!buSet.contains(BU_MC))
+							buSet += BU_MC;
 					} else if (resultCS) {
-						if (!buSet.contains("CS"))
-							buSet += "CS";
-					} else if (resultLD) {
-						if (!buSet.contains("LD"))
-							buSet += "LD";
+						if (!buSet.contains(BU_CS))
+							buSet += BU_CS;
 					}
 				}
 			}
