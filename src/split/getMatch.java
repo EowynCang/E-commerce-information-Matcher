@@ -51,6 +51,18 @@ public class getMatch {
 			List<String> product = new ArrayList<>();
 			List<String> dataOut = new ArrayList<>();
 
+			//Delete the last character test
+//			String a[] = {"a","b","c","d"};
+//			String z = "";
+//			for(String aa: a){
+//				z=z+aa+"|";
+//			}
+//
+//			z = z.substring(0,z.length()-1);
+//			System.out.println(z);
+//			System.out.println(z.lastIndexOf("|"));
+			
+			
 			// The account responsible for the purchase
 			String localHost = null;
 
@@ -87,7 +99,7 @@ public class getMatch {
 
 						matchPhone(sub, phone, localHost);
 
-						matchStatus(sub, status,dataOut);
+						matchStatus(sub, status,dataOut,localHost);
 
 						matchProductBu(sub, product, bu);
 
@@ -302,9 +314,16 @@ public class getMatch {
 			if (!ss.contains(localHost)) {
 				if(!ss.contains("西门子公司")){
 
-				Pattern p1 = Pattern.compile("\\):.+[公司|学校|科技].*");
+				//Pattern p1 = Pattern.compile("\\):.+工贸.*|(\\):)?.+公司.*|\\):.+学校.*|\\):.+科技.*");
+			    Pattern p1 = Pattern.compile("\\):.+工贸.*|\\):.+公司.*|\\):.+学校.*|\\):.+科技.*|\\):.+自动化.*");
 				Matcher comp = p1.matcher(ss);
 				boolean result2 = comp.find();
+				if(!result2){
+					p1 = Pattern.compile(".{13}公司.*|.{13}工贸.*|.{13}学校.*|.{13}科技.*|.{13}自动化.*");
+					comp = p1.matcher(ss);
+					result2 = comp.find();
+				}
+				
 				String company_result = null;
 
 				if (result2) {
@@ -354,7 +373,7 @@ public class getMatch {
 
 	}
 
-	private static void matchStatus(String subs[], List<String> status,List<String> dataOut) {
+	private static void matchStatus(String subs[], List<String> status,List<String> dataOut,String localHost) {
 		String statusSet = "";
 		String distributorSet = "";
 		
@@ -384,7 +403,9 @@ public class getMatch {
 				}
 				
 			} else if (ss.contains("https")) {
-				statusSet = UNSETTLED;
+				if(ss.contains(localHost)){
+					statusSet = UNSETTLED;
+				}
 			}
 		}
 		distributorSet = distributorSet.replaceAll("为您推荐官方授权代理商：","");
@@ -403,22 +424,29 @@ public class getMatch {
 
 		for (String ss : subs) {
 			if (!ss.contains("http")) {
+				///////////////
+				String product_result = null;
+				
 				Pattern pFA = Pattern
-						.compile("6[e|E|A|a][S|s|5|v|V]+[0-9A-Za-z\\-\\s\\()]{0,16}|(触摸屏)|(面板)|(工控机)|[lL][o|O][g|G][o|O]|[c|C][p|P][u|U]");
+						.compile("6[e|E|A|a][S|s|5|v|V]+[0-9A-Za-z\\-\\s\\()]{0,16}|(触摸屏)|(面板)|(工控机)|[lL][o|O][g|G][o|O]|[c|C][p|P][u|U]|6[e|E][d|D]+[0-9A-Za-z\\-\\s\\()]{0,16}|[p|P][c|C][s|S]7");
 				Matcher mFA = pFA.matcher(ss);
 				boolean resultFA = mFA.find();
+				
+				Pattern pPA = Pattern.compile("6[e|E][p|P]+[0-9A-Za-z\\-\\s\\()]{0,16}|6[x|X][v|V]+[0-9A-Za-z\\-\\s\\()]{0,16}");
+				Matcher mPA = pPA.matcher(ss);
+				boolean resultPA = mPA.find();
 
 				Pattern pCP = Pattern.compile(
-						"接触器|断路器|继电器|按钮|指示灯|信号灯|软启|3[R|r|t|T|v|V|u|U][t|v|u|h|b|a|s|d|f|w|g|x|c|k|T|V|U|H|B|A|S|D|F|W|G|X|C|K]+[0-9A-Za-z\\-\\s]{0,16}|8[A-Za-z][A-Za-z]+[0-9A-Za-z\\-\\s]{0,16}");
+						"接触器|断路器|继电器|按钮|指示灯|信号灯|软启|3[R|r|t|T|v|V|u|U][t|v|u|h|b|a|s|d|f|w|g|x|c|k|T|V|U|H|B|A|S|D|F|W|G|X|C|K]+[0-9A-Za-z\\-\\s]{0,16}|8[A-Za-z][A-Za-z]+[0-9A-Za-z\\-\\s]{0,16}|3[s|S][u|U]+[0-9A-Za-z\\-\\s]{0,16}|7[m|M|n|n]+[0-9A-Za-z\\-\\s]{0,16}");
 				Matcher mCP = pCP.matcher(ss);
 				boolean resultCP = mCP.find();
 
 				Pattern pMC = Pattern.compile(
-						"6[F|f|s|S][c|C|x|X|l|L|E|e|K|k]+[0-9A-Za-z\\-\\s]{0,16}|[S|s]120|[V|v][2|9][0|o|O]|[M|m][M|m]4|1[f|g|h|l|k|p|u|F|G|H|L|K|P|U][F|G|K|L|N|S|T|W|D|V|U|M|A|f|g|k|l|n|s|t|w|d|v|u|m|a][0-9A-Za-z\\-\\s]{0,16}|[g|G]1[1|2]0[a-zA-Z]{0,2}|变频器|数控");
+						"6[F|f|s|S][c|C|x|X|l|L|E|e|K|k]+[0-9A-Za-z\\-\\s]{0,16}|[S|s]120|[V|v][2|9][0|o|O]|[M|m][M|m]4|1[f|g|h|l|k|p|u|F|G|H|L|K|P|U][E|G|K|L|N|S|T|W|D|V|U|M|Y|y|e|g|k|l|n|s|t|w|d|v|u|m][0-9A-Za-z\\-\\s]{0,16}|[g|G]1[1|2]0[a-zA-Z]{0,2}|变频器|数控");
 				Matcher mMC = pMC.matcher(ss);
 				boolean resultMC = mMC.find();
 
-				Pattern pCS = Pattern.compile("9[h|H][s|S]+[0-9A-Za-z\\-\\s]{2,16}|9[a|A][t|T]+[0-9A-Za-z\\-\\s]{2,16}|9[f|F][c|C]+[0-9A-Za-z\\-\\s]{2,16}|9[V|v][S|s|p|P]+[0-9A-Za-z\\-\\s]{2,16}");
+				Pattern pCS = Pattern.compile("9[h|H][s|S]+[0-9A-Za-z\\-\\s]{2,16}|9[a|A][t|T]+[0-9A-Za-z\\-\\s]{2,16}|9[f|F][c|C]+[0-9A-Za-z\\-\\s]{2,16}|9[V|v][S|s|p|P]+[0-9A-Za-z\\-\\s]{2,16}|风驰卡");
 				Matcher mCS = pCS.matcher(ss);
 				boolean resultCS = mCS.find();
 
@@ -426,44 +454,64 @@ public class getMatch {
 				Matcher mPIC = pPIC.matcher(ss);
 				boolean resultPIC = mPIC.find();
 
-				String product_result = null;
-
-//				if (resultFA) {
-//					product_result = mFA.group(0);
-//					// strs.add(company_result);
-//					
-//				} 
-				if (resultCP) {
-					product_result = mCP.group(0);
-				} else if (resultMC) {
-					product_result = mMC.group(0);
-				} else if (resultCS) {
-					product_result = mCS.group(0);
-				} else if (resultPIC) {
-					product_result = mPIC.group(0);
-				}else if (resultFA) {
+				if(resultFA){
 					product_result = mFA.group(0);
-					// strs.add(company_result);
-				}
-
-				if (product_result != null) {
-					if (!productSet.contains(product_result)) {
-						productSet = productSet + product_result + "\n";
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
 					}
-					if (resultFA) {
-						if (!buSet.contains(BU_FA))
-							buSet += BU_FA;
-					} else if (resultCP) {
-						if (!buSet.contains(BU_CP))
-							buSet += BU_CP;
-					} else if (resultMC) {
-						if (!buSet.contains(BU_MC))
-							buSet += BU_MC;
-					} else if (resultCS) {
-						if (!buSet.contains(BU_CS))
-							buSet += BU_CS;
+					if(!buSet.contains(BU_FA)){
+						buSet += BU_FA;
 					}
 				}
+				
+				if(resultPA){
+					product_result = mPA.group(0);
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
+					}
+					if(!buSet.contains(BU_PA)){
+						buSet += BU_PA;
+					}
+				}
+				
+				if(resultCP){
+					product_result = mCP.group(0);
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
+					}
+					if(!buSet.contains(BU_CP)){
+						buSet += BU_CP;
+					}
+				}
+				
+				if(resultMC){
+					product_result = mMC.group(0);
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
+					}
+					if(!buSet.contains(BU_MC)){
+						buSet += BU_MC;
+					}
+				}
+				
+				if(resultCS){
+					product_result = mCS.group(0);
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
+					}
+					if(!buSet.contains(BU_CS)){
+						buSet += BU_CS;
+					}
+				}
+				
+				if(resultPIC){
+					product_result = mPIC.group(0);
+					if(!productSet.contains(product_result)){
+						productSet += product_result + "\n";
+					}
+				}
+				
+				///////////
 			}
 		}
 		product.add(productSet);
